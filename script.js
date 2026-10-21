@@ -192,30 +192,37 @@
   });
 
   /* ---- Contact form ------------------------------------------------------ */
+  // Posts to Formspree in the background and shows the result in place.
+  // Without JS the form still works: the action attribute posts directly
+  // and Formspree shows its own confirmation page.
 
   var form = document.querySelector(".contact-form");
   if (!form) return;
 
   var status = form.querySelector(".form-status");
   var button = form.querySelector("button[type=submit]");
-  var configured = form.action.indexOf("YOUR_FORM_ID") === -1;
 
   var setStatus = function (msg, kind) {
     status.textContent = msg;
     status.className = "form-status" + (kind ? " " + kind : "");
   };
 
-  if (!configured) {
-    button.disabled = true;
-    status.innerHTML = 'This form isn’t active yet. Please reach out on <a href="https://www.linkedin.com/in/willmccullough2026" target="_blank" rel="noopener">LinkedIn</a>.';
-  }
+  var clearInvalid = function () {
+    Array.prototype.forEach.call(form.querySelectorAll("[aria-invalid]"), function (el) {
+      el.removeAttribute("aria-invalid");
+    });
+  };
+
+  form.addEventListener("input", function (e) {
+    if (e.target.hasAttribute("aria-invalid")) e.target.removeAttribute("aria-invalid");
+  });
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
-    if (!configured) return;
     var data = new FormData(form);
     if (data.get("_gotcha")) return;
 
+    clearInvalid();
     button.disabled = true;
     setStatus("Sending…");
 
@@ -224,11 +231,23 @@
       body: data,
       headers: { Accept: "application/json" }
     }).then(function (res) {
-      if (!res.ok) throw new Error("bad status");
-      form.reset();
-      setStatus("Thanks, your request is in. I'll be in touch soon.", "ok");
+      if (res.ok) {
+        form.reset();
+        setStatus("Thanks, your request is in. I'll be in touch soon.", "ok");
+        return;
+      }
+      // Formspree returns { errors: [{ field, message }] } for validation problems
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        var errors = (body && body.errors) || [];
+        errors.forEach(function (err) {
+          var el = err.field && form.elements[err.field];
+          if (el && el.setAttribute) el.setAttribute("aria-invalid", "true");
+        });
+        var msg = errors.map(function (err) { return err.message; }).filter(Boolean).join(" ");
+        setStatus(msg || "Something went wrong. Please try again, or reach out on LinkedIn.", "err");
+      });
     }).catch(function () {
-      setStatus("Something went wrong. Please try again, or reach out on LinkedIn.", "err");
+      setStatus("Couldn't reach the server. Check your connection and try again, or reach out on LinkedIn.", "err");
     }).finally(function () {
       button.disabled = false;
     });

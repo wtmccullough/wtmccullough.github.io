@@ -12,7 +12,7 @@ Plain HTML/CSS/JS, no build step. GitHub Pages serves it from `main`.
 
 ## Contact form
 
-The form posts to Formspree. To turn it on, create a form at formspree.io and replace `YOUR_FORM_ID` in `index.html` with the form's ID. Until then, the submit button is disabled and the form points visitors to LinkedIn.
+The form posts to Formspree (form ID `xgaognld`, set in the `action` attribute in `index.html`). Submissions are emailed to the address on the Formspree account and kept in the Formspree dashboard. `script.js` sends the form in the background and shows the result in place; without JavaScript the form posts directly and Formspree shows its own confirmation page.
 
 ## Local preview
 

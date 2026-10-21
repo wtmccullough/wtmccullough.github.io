@@ -885,3 +885,6 @@ textarea { resize: vertical; min-height: 8rem; }
   .section { padding: 1.5rem 0; }
   .project { box-shadow: none; }
 }
+
+/* fields Formspree rejected */
+[aria-invalid="true"] { border-color: var(--warm) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--warm) 22%, transparent) !important; }
